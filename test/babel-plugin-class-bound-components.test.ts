@@ -2,12 +2,12 @@ import * as path from 'path';
 import pluginTester from 'babel-plugin-tester';
 import babelPluginClassBoundComponents from '../src/babel-plugin-class-bound-components';
 
-const fixture = (fixtureName) => {
+const fixture = (fixtureName: string) => {
   const fixturePath = path.resolve(__dirname, 'fixtures', fixtureName);
 
   return {
     fixture: path.join(fixturePath, 'actual.js'),
-    fixtureOutput: path.join(fixturePath, 'expected.js'),
+    outputFixture: path.join(fixturePath, 'expected.js'),
   };
 };
 

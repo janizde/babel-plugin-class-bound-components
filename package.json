@@ -1,5 +1,6 @@
 {
   "version": "1.0.0",
+  "name": "babel-plugin-class-bound-components",
   "description": "Plugin transforming calls to class-bound-components",
   "repository": "janizde/babel-plugin-class-bound-components",
   "author": "Jannik Portz <hello@jannikportz.de>",
@@ -9,6 +10,7 @@
     "@babel/core": "^7.10.4",
     "@babel/preset-env": "^7.10.4",
     "@babel/preset-typescript": "^7.10.4",
+    "@types/babel-traverse": "^6.25.5",
     "@types/jest": "^26.0.4",
     "babel-jest": "^26.1.0",
     "babel-plugin-tester": "^9.2.0",
@@ -26,8 +28,5 @@
     "plugin",
     "class-bound-components",
     "babel-plugin"
-  ],
-  "dependencies": {
-    "@babel/types": "^7.10.4"
-  }
+  ]
 }

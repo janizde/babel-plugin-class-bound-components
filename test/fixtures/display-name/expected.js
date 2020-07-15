@@ -1,3 +1,4 @@
-"use strict";
-
-var foo = undefined;
+import classBound from 'class-bound-components';
+const FooComponent = classBound({
+  className: ['foo', 'bar'],
+});
