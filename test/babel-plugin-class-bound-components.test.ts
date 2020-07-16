@@ -20,6 +20,10 @@ pluginTester({
       ...fixture('display-name-options'),
     },
     {
+      title: 'should add an explicit displayName to positional signatures',
+      ...fixture('display-name-positional'),
+    },
+    {
       title:
         'should detect the classBound function only for default imports and leave usages of others as-is',
       ...fixture('detect-import'),
