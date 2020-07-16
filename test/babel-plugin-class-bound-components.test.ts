@@ -17,7 +17,7 @@ pluginTester({
   tests: [
     {
       title: 'should add an explicit displayName to the options signature',
-      ...fixture('display-name'),
+      ...fixture('display-name-options'),
     },
     {
       title:
