@@ -19,5 +19,10 @@ pluginTester({
       title: 'should add an explicit displayName to the options signature',
       ...fixture('display-name'),
     },
+    {
+      title:
+        'should detect the classBound function only for default imports and leave usages of others as-is',
+      ...fixture('detect-import'),
+    },
   ],
 });

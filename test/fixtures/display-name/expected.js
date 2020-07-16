@@ -20,3 +20,19 @@ const someOptions = {
 };
 const ExternalOptions = classBound(someOptions);
 const ExternalOptionsSpread = classBound({ ...someOptions, className: 'bar' });
+const { $$typeof } = classBound({
+  className: 'foo',
+});
+const BazComponent1 = classBound({
+  displayName: 'Custom1',
+});
+const BazComponent2 = classBound({
+  ['displayName']: 'Custom1',
+});
+const BazComponent3 = classBound({
+  [`displayName`]: 'Custom1',
+});
+const BazComponent4 = classBound({
+  [`displayName${''}`]: 'Custom1',
+  displayName: 'BazComponent4',
+});
