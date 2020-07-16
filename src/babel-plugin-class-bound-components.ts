@@ -161,24 +161,23 @@ function makeRootVisitor(t: BabelTypes): Visitor {
       return true;
     }
 
-    // When there are two arguments it could be displayName or variants
-    // We can only be completely sure it's variants if it's an ObjectExpression
+    // When there are multiple arguments we can be sure that the second is variants
+    // when it's an object expression, so `displayName` can be added before it
     if (
-      call.arguments.length === 2 &&
+      call.arguments.length > 1 &&
       call.arguments[1].type === 'ObjectExpression'
     ) {
       return true;
     }
 
-    // When there are three arguments it can be (className, displayName, variants) or (className, variants, elementType)
-    // We can only be completely sure it's the latter when the last argument is a string and can be identified as elementType
-    // or the second argument is an ObjectExpression and can be identified as variants
+    // When there are three arguments and the (className, variants, elementType) signature couldn't be
+    // inferred from `variants` being an ObjectExpression, we can still be sure we have it when the last
+    // one is a string (i.e. `elementType` is an intrinsic JSX element)
     if (
-      (call.arguments.length === 3 &&
-        safeNonObjectTypes.includes(
-          call.arguments[2].type as t.Expression['type']
-        )) ||
-      call.arguments[1].type === 'ObjectExpression'
+      call.arguments.length === 3 &&
+      safeNonObjectTypes.includes(
+        call.arguments[2].type as t.Expression['type']
+      )
     ) {
       return true;
     }
