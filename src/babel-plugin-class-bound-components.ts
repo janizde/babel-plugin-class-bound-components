@@ -41,7 +41,13 @@ function makeRootVisitor(t: BabelTypes): Visitor {
         callee.type === 'Identifier' &&
         callee.name === this.classBoundSpecifier
       ) {
-        transformArguments(path.node);
+        const displayName =
+          path.parent.type === 'VariableDeclarator' &&
+          path.parent.id.type === 'Identifier'
+            ? path.parent.id.name
+            : null;
+
+        transformArguments(path.node, displayName);
         return;
       }
 
@@ -55,12 +61,15 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     },
   };
 
-  const transformArguments = (call: t.CallExpression) => {
+  const transformArguments = (
+    call: t.CallExpression,
+    displayName: string | null
+  ) => {
     if (
       call.arguments.length === 1 &&
       call.arguments[0].type === 'ObjectExpression'
     ) {
-      transformOptionsSignature(call.arguments[0]);
+      transformOptionsSignature(call.arguments[0], displayName);
     }
   };
 
@@ -68,26 +77,34 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     t.ObjectExpression['properties'][0]['type']
   > = ['ObjectMethod', 'ObjectProperty'];
 
-  const transformOptionsSignature = (objectExpression: t.ObjectExpression) => {
-    if (
-      !objectExpression.properties.every((p) =>
-        allowedObjectPropertyTypes.includes(p.type)
-      )
-    ) {
-      return;
+  const transformOptionsSignature = (
+    objectExpression: t.ObjectExpression,
+    displayName: string | null
+  ) => {
+    if (displayName) {
+      if (
+        !objectExpression.properties.every((p) =>
+          allowedObjectPropertyTypes.includes(p.type)
+        )
+      ) {
+        return;
+      }
+
+      const properties = objectExpression.properties as Array<
+        t.ObjectMethod | t.ObjectProperty
+      >;
+
+      if (properties.some((p) => isStaticObjectKey(p.key, 'displayName'))) {
+        return;
+      }
+
+      objectExpression.properties.push(
+        t.objectProperty(
+          t.identifier('displayName'),
+          t.stringLiteral(displayName)
+        )
+      );
     }
-
-    const properties = objectExpression.properties as Array<
-      t.ObjectMethod | t.ObjectProperty
-    >;
-
-    if (properties.some((p) => isStaticObjectKey(p.key, 'displayName'))) {
-      return;
-    }
-
-    objectExpression.properties.push(
-      t.objectProperty(t.identifier('displayName'), t.stringLiteral('FooBar'))
-    );
   };
 
   const isStaticObjectKey = (key: t.Expression, name: string) =>
