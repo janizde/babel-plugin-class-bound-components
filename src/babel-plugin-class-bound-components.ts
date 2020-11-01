@@ -38,6 +38,19 @@ function makeRootVisitor(t: BabelTypes): Visitor {
       } = path;
 
       if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.object.name === this.classBoundSpecifier
+      ) {
+        const didInlineElementType = inlineElementType(path.node);
+        if (didInlineElementType) {
+          path.node.callee = t.identifier(this.classBoundSpecifier);
+        }
+
+        return;
+      }
+
+      if (
         callee.type === 'Identifier' &&
         callee.name === this.classBoundSpecifier
       ) {
@@ -129,6 +142,36 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     }
   };
 
+  const inlineElementType = (call: t.CallExpression): boolean => {
+    if (call.callee.type !== 'MemberExpression') {
+      return false;
+    }
+
+    const elementType = getStaticExpressionValue(
+      call.callee.property as t.Expression
+    );
+
+    if (!elementType) {
+      return false;
+    }
+
+    if (
+      call.arguments.length === 1 &&
+      call.arguments[0].type === 'ObjectExpression'
+    ) {
+      call.arguments[0].properties.push(
+        t.objectProperty(
+          t.identifier('elementType'),
+          t.stringLiteral(elementType)
+        )
+      );
+
+      return true;
+    }
+
+    return false;
+  };
+
   const transformPositionalSignatures = (
     call: t.CallExpression,
     displayName: string | null
@@ -138,12 +181,26 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     }
   };
 
+  const getStaticExpressionValue = (expression: t.Expression) => {
+    switch (expression.type) {
+      case 'Identifier':
+        return expression.name;
+
+      case 'StringLiteral':
+        return expression.value;
+
+      case 'TemplateLiteral':
+        return expression.quasis.length === 1
+          ? expression.quasis[0].value.raw
+          : null;
+
+      default:
+        return null;
+    }
+  };
+
   const isStaticObjectKey = (key: t.Expression, name: string) =>
-    (key.type === 'Identifier' && key.name === name) ||
-    (key.type === 'StringLiteral' && key.value === name) ||
-    (key.type === 'TemplateLiteral' &&
-      key.quasis.length === 1 &&
-      key.quasis[0].value.raw === name);
+    getStaticExpressionValue(key) === name;
 
   /**
    * Given a `CallExpression` of the `classBound` function, tries to infer the signature used by the nature

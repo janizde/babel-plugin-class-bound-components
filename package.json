@@ -4,7 +4,7 @@
   "description": "Plugin transforming calls to class-bound-components",
   "repository": "janizde/babel-plugin-class-bound-components",
   "author": "Jannik Portz <hello@jannikportz.de>",
-  "main": "dist/index.js",
+  "main": "dist/babel-plugin-class-bound-components.js",
   "devDependencies": {
     "@babel/cli": "^7.10.4",
     "@babel/core": "^7.10.4",

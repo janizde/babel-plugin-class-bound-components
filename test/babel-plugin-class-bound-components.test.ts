@@ -28,5 +28,10 @@ pluginTester({
         'should detect the classBound function only for default imports and leave usages of others as-is',
       ...fixture('detect-import'),
     },
+    {
+      title:
+        'should insert elementType into options signature when using a proxy method',
+      ...fixture('inline-element-type-options'),
+    },
   ],
 });
