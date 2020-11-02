@@ -38,5 +38,10 @@ pluginTester({
         'should insert elementType into positional signatures when using a proxy method',
       ...fixture('inline-element-type-positional'),
     },
+    {
+      title:
+        'should try to detect the short signature or otherwise insert elementType at fourth position',
+      ...fixture('inline-element-type-positional-infer'),
+    },
   ],
 });

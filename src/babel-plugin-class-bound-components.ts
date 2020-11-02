@@ -155,7 +155,7 @@ function makeRootVisitor(t: BabelTypes): Visitor {
       return false;
     }
 
-    const [optionsOrClassName, displayNameOrVariants] = call.arguments;
+    const [optionsOrClassName] = call.arguments;
 
     if (
       call.arguments.length === 1 &&
@@ -175,12 +175,16 @@ function makeRootVisitor(t: BabelTypes): Visitor {
       return false;
     }
 
-    const isFullSignature =
-      call.arguments.length === 1 || // This could be either, let's go with the full one
-      getStaticExpressionValue(displayNameOrVariants as t.Expression) !== null;
+    // When the second argument is an ObjectExpression it has to be [className, variants, elementType]
+    const isShortSignature =
+      call.arguments.length === 2 &&
+      call.arguments[1].type === 'ObjectExpression';
 
-    const elementTypePosition = isFullSignature ? 3 : 2;
+    // When it's not for sure the short signature it has to be [className, displayName, variants, elementType],
+    // otherwise elementType can always be passed as the fourth argument
+    const elementTypePosition = isShortSignature ? 2 : 3;
 
+    // Fill with null literals
     for (let i = 0; i < elementTypePosition; ++i) {
       if (!call.arguments[i]) {
         call.arguments[i] = t.nullLiteral();
