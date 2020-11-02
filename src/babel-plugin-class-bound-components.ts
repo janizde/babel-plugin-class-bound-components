@@ -21,6 +21,8 @@ type State = {
   inlineElementType: boolean;
 };
 
+const reservedMethods = ['extend', 'withOptions', 'withVariants', 'as'];
+
 function makeRootVisitor(t: BabelTypes): Visitor {
   const importClassBoundVisitor: Visitor<{ opts: Options }> = {
     ImportDeclaration(path, state) {
@@ -160,7 +162,7 @@ function makeRootVisitor(t: BabelTypes): Visitor {
       call.callee.property as t.Expression
     );
 
-    if (!elementType) {
+    if (!elementType || reservedMethods.indexOf(elementType) > -1) {
       return false;
     }
 

@@ -67,5 +67,13 @@ pluginTester({
         elementType: true,
       },
     },
+    {
+      title: 'should not transform reserved methods to elementTypes',
+      ...fixture('inline-element-type-reserved-methods'),
+      pluginOptions: {
+        displayName: false,
+        elementType: true,
+      },
+    },
   ],
 });
