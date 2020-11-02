@@ -33,5 +33,10 @@ pluginTester({
         'should insert elementType into options signature when using a proxy method',
       ...fixture('inline-element-type-options'),
     },
+    {
+      title:
+        'should insert elementType into positional signatures when using a proxy method',
+      ...fixture('inline-element-type-positional'),
+    },
   ],
 });

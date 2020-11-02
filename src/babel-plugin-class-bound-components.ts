@@ -155,11 +155,13 @@ function makeRootVisitor(t: BabelTypes): Visitor {
       return false;
     }
 
+    const [optionsOrClassName, displayNameOrVariants] = call.arguments;
+
     if (
       call.arguments.length === 1 &&
-      call.arguments[0].type === 'ObjectExpression'
+      optionsOrClassName.type === 'ObjectExpression'
     ) {
-      call.arguments[0].properties.push(
+      optionsOrClassName.properties.push(
         t.objectProperty(
           t.identifier('elementType'),
           t.stringLiteral(elementType)
@@ -169,7 +171,25 @@ function makeRootVisitor(t: BabelTypes): Visitor {
       return true;
     }
 
-    return false;
+    if (call.arguments.length < 1) {
+      return false;
+    }
+
+    const isFullSignature =
+      call.arguments.length === 1 || // This could be either, let's go with the full one
+      getStaticExpressionValue(displayNameOrVariants as t.Expression) !== null;
+
+    const elementTypePosition = isFullSignature ? 3 : 2;
+
+    for (let i = 0; i < elementTypePosition; ++i) {
+      if (!call.arguments[i]) {
+        call.arguments[i] = t.nullLiteral();
+      }
+    }
+
+    call.arguments[elementTypePosition] = t.stringLiteral(elementType);
+
+    return true;
   };
 
   const transformPositionalSignatures = (
