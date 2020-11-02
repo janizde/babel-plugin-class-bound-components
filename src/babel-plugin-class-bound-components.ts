@@ -10,9 +10,20 @@ export default function (babelTypes: { types: BabelTypes }) {
   };
 }
 
+type Options = {
+  displayName?: boolean;
+  elementType?: boolean;
+};
+
+type State = {
+  classBoundSpecifier: string;
+  insertDisplayName: boolean;
+  inlineElementType: boolean;
+};
+
 function makeRootVisitor(t: BabelTypes): Visitor {
-  const importClassBoundVisitor: Visitor = {
-    ImportDeclaration(path) {
+  const importClassBoundVisitor: Visitor<{ opts: Options }> = {
+    ImportDeclaration(path, state) {
       if (path.node.source.value !== 'class-bound-components') {
         return;
       }
@@ -27,49 +38,47 @@ function makeRootVisitor(t: BabelTypes): Visitor {
 
       path.parentPath.traverse(callVisitor, {
         classBoundSpecifier: specifierName,
+        insertDisplayName: !!state.opts.displayName,
+        inlineElementType: !!state.opts.elementType,
       });
     },
   };
 
-  const callVisitor: Visitor<{ classBoundSpecifier: string }> = {
-    CallExpression(path) {
+  const callVisitor: Visitor<State> = {
+    CallExpression(path, state) {
       const {
         node: { callee },
       } = path;
 
-      if (
-        callee.type === 'MemberExpression' &&
-        callee.object.type === 'Identifier' &&
-        callee.object.name === this.classBoundSpecifier
-      ) {
-        const didInlineElementType = inlineElementType(path.node);
-        if (didInlineElementType) {
-          path.node.callee = t.identifier(this.classBoundSpecifier);
+      if (state.inlineElementType) {
+        if (
+          callee.type === 'MemberExpression' &&
+          callee.object.type === 'Identifier' &&
+          callee.object.name === this.classBoundSpecifier
+        ) {
+          const didInlineElementType = inlineElementType(path.node);
+          if (didInlineElementType) {
+            path.node.callee = t.identifier(this.classBoundSpecifier);
+          }
+
+          return;
         }
-
-        return;
       }
 
-      if (
-        callee.type === 'Identifier' &&
-        callee.name === this.classBoundSpecifier
-      ) {
-        const displayName =
-          path.parent.type === 'VariableDeclarator' &&
-          path.parent.id.type === 'Identifier'
-            ? path.parent.id.name
-            : null;
+      if (state.insertDisplayName) {
+        if (
+          callee.type === 'Identifier' &&
+          callee.name === this.classBoundSpecifier
+        ) {
+          const displayName =
+            path.parent.type === 'VariableDeclarator' &&
+            path.parent.id.type === 'Identifier'
+              ? path.parent.id.name
+              : null;
 
-        transformArguments(path.node, displayName);
-        return;
-      }
-
-      if (
-        callee.type === 'MemberExpression' &&
-        callee.object.type === 'Identifier' &&
-        callee.object.name === this.classBoundSpecifier
-      ) {
-        // traverse with elementType
+          transformArguments(path.node, displayName);
+          return;
+        }
       }
     },
   };
