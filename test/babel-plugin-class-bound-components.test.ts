@@ -42,6 +42,15 @@ pluginTester({
     },
     {
       title:
+        'should add explicit displayNames to calls of element proxy methods',
+      ...fixture('display-name-element-proxy'),
+      pluginOptions: {
+        displayName: true,
+        elementType: false,
+      },
+    },
+    {
+      title:
         'should insert elementType into options signature when using a proxy method',
       ...fixture('inline-element-type-options'),
       pluginOptions: {

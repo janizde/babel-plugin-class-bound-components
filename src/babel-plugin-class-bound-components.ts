@@ -74,11 +74,29 @@ function makeRootVisitor(t: BabelTypes): Visitor {
           : null;
       };
 
-      if (
-        this.classBoundSpecifier &&
-        callee.type === 'Identifier' &&
-        callee.name === this.classBoundSpecifier
-      ) {
+      const isClassBoundCall = () => {
+        if (
+          callee.type === 'Identifier' &&
+          callee.name === this.classBoundSpecifier
+        ) {
+          return true;
+        }
+
+        if (
+          callee.type === 'MemberExpression' &&
+          callee.object.type === 'Identifier' &&
+          callee.object.name === this.classBoundSpecifier
+        ) {
+          const propertyName = getStaticExpressionValue(
+            callee.property as t.Expression
+          );
+          return !!propertyName && reservedMethods.indexOf(propertyName) < 0;
+        }
+
+        return false;
+      };
+
+      if (this.classBoundSpecifier && isClassBoundCall()) {
         const displayName = getImplicitDisplayName(path.parent);
 
         if (displayName) {
