@@ -92,5 +92,13 @@ pluginTester({
         elementType: false,
       },
     },
+    {
+      title: 'should add elementTypes and displayNames simultaneously',
+      ...fixture('combined'),
+      pluginOptions: {
+        displayName: true,
+        elementType: true,
+      },
+    },
   ],
 });
