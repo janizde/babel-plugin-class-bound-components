@@ -16,7 +16,8 @@ type Options = {
 };
 
 type State = {
-  classBoundSpecifier: string;
+  classBoundSpecifier: string | null;
+  extendSpecifier: string | null;
   insertDisplayName: boolean;
   inlineElementType: boolean;
 };
@@ -30,16 +31,19 @@ function makeRootVisitor(t: BabelTypes): Visitor {
         return;
       }
 
-      const specifierName = path.node.specifiers.find(
+      // Symbol of the classBound function
+      const defaultImportLocal = path.node.specifiers.find(
         (s) => s.type === 'ImportDefaultSpecifier'
       )?.local.name;
 
-      if (!specifierName) {
-        return;
-      }
+      // Symbol of the standalone extend function
+      const extendImportLocal = path.node.specifiers.find(
+        (s) => s.type === 'ImportSpecifier' && s.imported.name === 'extend'
+      )?.local.name;
 
       path.parentPath.traverse(callVisitor, {
-        classBoundSpecifier: specifierName,
+        classBoundSpecifier: defaultImportLocal || null,
+        extendSpecifier: extendImportLocal || null,
         insertDisplayName: !!state.opts.displayName,
         inlineElementType: !!state.opts.elementType,
       });
@@ -54,6 +58,7 @@ function makeRootVisitor(t: BabelTypes): Visitor {
 
       if (state.inlineElementType) {
         if (
+          this.classBoundSpecifier &&
           callee.type === 'MemberExpression' &&
           callee.object.type === 'Identifier' &&
           callee.object.name === this.classBoundSpecifier
@@ -86,6 +91,7 @@ function makeRootVisitor(t: BabelTypes): Visitor {
 
       if (state.insertDisplayName) {
         if (
+          this.classBoundSpecifier &&
           callee.type === 'Identifier' &&
           callee.name === this.classBoundSpecifier
         ) {
@@ -105,6 +111,16 @@ function makeRootVisitor(t: BabelTypes): Visitor {
           );
 
           if (propertyName === 'extend' && displayName) {
+            addDisplayNameToExtend(path.node, displayName);
+          }
+        } else if (
+          this.extendSpecifier &&
+          callee.type === 'Identifier' &&
+          callee.name === this.extendSpecifier
+        ) {
+          const displayName = getImplicitDisplayName(path.parent);
+
+          if (displayName) {
             addDisplayNameToExtend(path.node, displayName);
           }
         }
