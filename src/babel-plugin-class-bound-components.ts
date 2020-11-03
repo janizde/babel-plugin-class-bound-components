@@ -18,8 +18,6 @@ type Options = {
 type State = {
   classBoundSpecifier: string | null;
   extendSpecifier: string | null;
-  insertDisplayName: boolean;
-  inlineElementType: boolean;
 };
 
 const reservedMethods = ['extend', 'withOptions', 'withVariants', 'as'];
@@ -41,46 +39,33 @@ function makeRootVisitor(t: BabelTypes): Visitor {
         (s) => s.type === 'ImportSpecifier' && s.imported.name === 'extend'
       )?.local.name;
 
-      path.parentPath.traverse(callVisitor, {
-        classBoundSpecifier: defaultImportLocal || null,
-        extendSpecifier: extendImportLocal || null,
-        insertDisplayName: !!state.opts.displayName,
-        inlineElementType: !!state.opts.elementType,
-      });
+      const traverseProgramWith = (visitor: Visitor<State>) =>
+        path.parentPath.traverse(visitor, {
+          classBoundSpecifier: defaultImportLocal || null,
+          extendSpecifier: extendImportLocal || null,
+        });
+
+      if (state.opts.displayName) {
+        traverseProgramWith(displayNameVisitor);
+      }
+
+      if (state.opts.elementType) {
+        traverseProgramWith(elementTypeVisitor);
+      }
     },
   };
 
-  const callVisitor: Visitor<State> = {
-    CallExpression(path, state) {
+  /**
+   * Visits all `CallExpression`s and searches for calls of the `classBound` (or as whatever
+   * symbol it is imported in the current module), `classBound.extend` or `extend` functions and tries
+   * to explicitly add a `displayName` argument. The display name is taken from the corresponding
+   * `VariableDeclaration` if possible.
+   */
+  const displayNameVisitor: Visitor<State> = {
+    CallExpression(path) {
       const {
         node: { callee },
       } = path;
-
-      if (state.inlineElementType) {
-        if (
-          this.classBoundSpecifier &&
-          callee.type === 'MemberExpression' &&
-          callee.object.type === 'Identifier' &&
-          callee.object.name === this.classBoundSpecifier
-        ) {
-          // Try to get the property name from Identifier, StringLiteral, TemplateLiteral etc.
-          const propertyValue = getStaticExpressionValue(
-            callee.property as t.Expression
-          );
-
-          if (propertyValue && reservedMethods.indexOf(propertyValue) < 0) {
-            const didInlineElementType = inlineElementType(
-              path.node,
-              propertyValue
-            );
-            if (didInlineElementType) {
-              path.node.callee = t.identifier(this.classBoundSpecifier);
-            }
-          }
-
-          return;
-        }
-      }
 
       const getImplicitDisplayName = (node: t.Node): string | null => {
         return node.type === 'VariableDeclarator' &&
@@ -89,40 +74,68 @@ function makeRootVisitor(t: BabelTypes): Visitor {
           : null;
       };
 
-      if (state.insertDisplayName) {
-        if (
-          this.classBoundSpecifier &&
-          callee.type === 'Identifier' &&
-          callee.name === this.classBoundSpecifier
-        ) {
-          const displayName = getImplicitDisplayName(path.parent);
+      if (
+        this.classBoundSpecifier &&
+        callee.type === 'Identifier' &&
+        callee.name === this.classBoundSpecifier
+      ) {
+        const displayName = getImplicitDisplayName(path.parent);
 
-          if (displayName) {
-            addDisplayNameToClassBound(path.node, displayName);
-          }
-        } else if (
-          callee.type === 'MemberExpression' &&
-          callee.object.type === 'Identifier' &&
-          callee.object.name === this.classBoundSpecifier
-        ) {
-          const displayName = getImplicitDisplayName(path.parent);
-          const propertyName = getStaticExpressionValue(
-            callee.property as t.Expression
-          );
+        if (displayName) {
+          addDisplayNameToClassBound(path.node, displayName);
+        }
+      } else if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.object.name === this.classBoundSpecifier
+      ) {
+        const displayName = getImplicitDisplayName(path.parent);
+        const propertyName = getStaticExpressionValue(
+          callee.property as t.Expression
+        );
 
-          if (propertyName === 'extend' && displayName) {
-            addDisplayNameToExtend(path.node, displayName);
-          }
-        } else if (
-          this.extendSpecifier &&
-          callee.type === 'Identifier' &&
-          callee.name === this.extendSpecifier
-        ) {
-          const displayName = getImplicitDisplayName(path.parent);
+        if (propertyName === 'extend' && displayName) {
+          addDisplayNameToExtend(path.node, displayName);
+        }
+      } else if (
+        this.extendSpecifier &&
+        callee.type === 'Identifier' &&
+        callee.name === this.extendSpecifier
+      ) {
+        const displayName = getImplicitDisplayName(path.parent);
 
-          if (displayName) {
-            addDisplayNameToExtend(path.node, displayName);
-          }
+        if (displayName) {
+          addDisplayNameToExtend(path.node, displayName);
+        }
+      }
+    },
+  };
+
+  /**
+   * Visits all `CallExpression`s and searches for calls of the `classBound` function (or as whatever
+   * symbol it is imported in the current module) and tries to replace a proxy member access of
+   * `classBound[IntrinsicElement]()` with an explicit `elementType` argument.
+   */
+  const elementTypeVisitor: Visitor<State> = {
+    CallExpression(path) {
+      const {
+        node: { callee },
+      } = path;
+
+      if (
+        this.classBoundSpecifier &&
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.object.name === this.classBoundSpecifier
+      ) {
+        // Try to get the property name from Identifier, StringLiteral, TemplateLiteral etc.
+        const propertyValue = getStaticExpressionValue(
+          callee.property as t.Expression
+        );
+
+        if (propertyValue && reservedMethods.indexOf(propertyValue) < 0) {
+          inlineElementType(path.node, propertyValue);
+          path.node.callee = t.identifier(this.classBoundSpecifier);
         }
       }
     },
@@ -165,6 +178,9 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     }
   };
 
+  /**
+   * Given a `classBound` call expression, adds an explicit displayName argument if possible
+   */
   const addDisplayNameToClassBound = (
     call: t.CallExpression,
     displayName: string | null
@@ -192,6 +208,11 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     t.ObjectExpression['properties'][0]['type']
   > = ['ObjectMethod', 'ObjectProperty'];
 
+  /**
+   * Given an object expression representing a `classBound` options object, adds a `displayName` property.
+   * `displayName` is only added when it's clear that it's not already present. E.g., when spreading another
+   * object into the options object, we can't be sure a `displayName` is not already provided.
+   */
   const transformOptionsSignature = (
     objectExpression: t.ObjectExpression,
     displayName: string | null
@@ -222,10 +243,11 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     }
   };
 
-  const inlineElementType = (
-    call: t.CallExpression,
-    elementType: string
-  ): boolean => {
+  /**
+   * Given a CallExpression of `classBound[JSX.IntrinsicElement]()` tries to move the proxy method.
+   * Returns a boolean indicating whether it was successfully added.
+   */
+  const inlineElementType = (call: t.CallExpression, elementType: string) => {
     const [optionsOrClassName] = call.arguments;
 
     if (
@@ -239,11 +261,7 @@ function makeRootVisitor(t: BabelTypes): Visitor {
         )
       );
 
-      return true;
-    }
-
-    if (call.arguments.length < 1) {
-      return false;
+      return;
     }
 
     // When the second argument is an ObjectExpression it has to be [className, variants, elementType]
@@ -263,8 +281,6 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     }
 
     call.arguments[elementTypePosition] = t.stringLiteral(elementType);
-
-    return true;
   };
 
   const transformPositionalSignatures = (
@@ -276,6 +292,10 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     }
   };
 
+  /**
+   * Given an arbitrary expression, tries to retrieve its static value, e.g.,
+   * for Identifiers, StringLiterals or TemplateLiterals with only static parts
+   */
   const getStaticExpressionValue = (expression: t.Expression) => {
     switch (expression.type) {
       case 'Identifier':
