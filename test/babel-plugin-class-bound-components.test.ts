@@ -75,5 +75,13 @@ pluginTester({
         elementType: true,
       },
     },
+    {
+      title: 'should add displayNames for calls of extend',
+      ...fixture('display-name-extend'),
+      pluginOptions: {
+        displayName: true,
+        elementType: false,
+      },
+    },
   ],
 });

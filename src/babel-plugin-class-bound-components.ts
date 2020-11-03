@@ -58,28 +58,55 @@ function makeRootVisitor(t: BabelTypes): Visitor {
           callee.object.type === 'Identifier' &&
           callee.object.name === this.classBoundSpecifier
         ) {
-          const didInlineElementType = inlineElementType(path.node);
-          if (didInlineElementType) {
-            path.node.callee = t.identifier(this.classBoundSpecifier);
+          // Try to get the property name from Identifier, StringLiteral, TemplateLiteral etc.
+          const propertyValue = getStaticExpressionValue(
+            callee.property as t.Expression
+          );
+
+          if (propertyValue && reservedMethods.indexOf(propertyValue) < 0) {
+            const didInlineElementType = inlineElementType(
+              path.node,
+              propertyValue
+            );
+            if (didInlineElementType) {
+              path.node.callee = t.identifier(this.classBoundSpecifier);
+            }
           }
 
           return;
         }
       }
 
+      const getImplicitDisplayName = (node: t.Node): string | null => {
+        return node.type === 'VariableDeclarator' &&
+          node.id.type === 'Identifier'
+          ? node.id.name
+          : null;
+      };
+
       if (state.insertDisplayName) {
         if (
           callee.type === 'Identifier' &&
           callee.name === this.classBoundSpecifier
         ) {
-          const displayName =
-            path.parent.type === 'VariableDeclarator' &&
-            path.parent.id.type === 'Identifier'
-              ? path.parent.id.name
-              : null;
+          const displayName = getImplicitDisplayName(path.parent);
 
-          transformArguments(path.node, displayName);
-          return;
+          if (displayName) {
+            addDisplayNameToClassBound(path.node, displayName);
+          }
+        } else if (
+          callee.type === 'MemberExpression' &&
+          callee.object.type === 'Identifier' &&
+          callee.object.name === this.classBoundSpecifier
+        ) {
+          const displayName = getImplicitDisplayName(path.parent);
+          const propertyName = getStaticExpressionValue(
+            callee.property as t.Expression
+          );
+
+          if (propertyName === 'extend' && displayName) {
+            addDisplayNameToExtend(path.node, displayName);
+          }
         }
       }
     },
@@ -96,7 +123,33 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     'ArrayExpression',
   ];
 
-  const transformArguments = (
+  const addDisplayNameToExtend = (
+    call: t.CallExpression,
+    displayName: string
+  ) => {
+    // When there's more than 3 arguments, it has to be the full signature
+    if (call.arguments.length > 3) {
+      return;
+    }
+
+    if (
+      // Can safely add the third argument
+      call.arguments.length < 3 ||
+      // Third argument has to be variants
+      (call.arguments.length === 3 &&
+        call.arguments[2].type === 'ObjectExpression')
+    ) {
+      for (let i = 0; i < 2; ++i) {
+        if (call.arguments[i] === undefined) {
+          call.arguments[i] = t.nullLiteral();
+        }
+      }
+
+      call.arguments.splice(2, 0, t.stringLiteral(displayName));
+    }
+  };
+
+  const addDisplayNameToClassBound = (
     call: t.CallExpression,
     displayName: string | null
   ) => {
@@ -153,19 +206,10 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     }
   };
 
-  const inlineElementType = (call: t.CallExpression): boolean => {
-    if (call.callee.type !== 'MemberExpression') {
-      return false;
-    }
-
-    const elementType = getStaticExpressionValue(
-      call.callee.property as t.Expression
-    );
-
-    if (!elementType || reservedMethods.indexOf(elementType) > -1) {
-      return false;
-    }
-
+  const inlineElementType = (
+    call: t.CallExpression,
+    elementType: string
+  ): boolean => {
     const [optionsOrClassName] = call.arguments;
 
     if (
@@ -277,5 +321,5 @@ function makeRootVisitor(t: BabelTypes): Visitor {
     return false;
   };
 
-  return importClassBoundVisitor;
+  return importClassBoundVisitor as Visitor<any>;
 }
