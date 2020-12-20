@@ -100,5 +100,9 @@ pluginTester({
         elementType: true,
       },
     },
+    {
+      title: 'should enable both transformations by default',
+      ...fixture('no-options'),
+    }
   ],
 });

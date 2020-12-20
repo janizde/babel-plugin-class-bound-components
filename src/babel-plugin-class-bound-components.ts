@@ -45,11 +45,11 @@ function makeRootVisitor(t: BabelTypes): Visitor {
           extendSpecifier: extendImportLocal || null,
         });
 
-      if (state.opts.displayName) {
+      if (state.opts.displayName ?? true) {
         traverseProgramWith(displayNameVisitor);
       }
 
-      if (state.opts.elementType) {
+      if (state.opts.elementType ?? true) {
         traverseProgramWith(elementTypeVisitor);
       }
     },
