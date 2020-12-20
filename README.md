@@ -1,4 +1,4 @@
-# babel-plugin-class-bound-components
+# babel-plugin-class-bound-components 👄 🔌 [![Build Status](https://travis-ci.com/janizde/babel-plugin-class-bound-components.svg?branch=master)](https://travis-ci.com/janizde/class-bound-babel-plugin-class-bound-components) [![npm version](https://badge.fury.io/js/babel-plugin-class-bound-components.svg)](https://badge.fury.io/js/babel-plugin-class-bound-components) [![Coverage Status](https://coveralls.io/repos/github/janizde/babel-plugin-class-bound-components/badge.svg?branch=master)](https://coveralls.io/github/janizde/babel-plugin-class-bound-components?branch=master) [![Dependency Status](https://david-dm.org/janizde/babel-plugin-class-bound-components.svg)](https://david-dm.org/janizde/babel-plugin-class-bound-components)
 
 Plugin transforming calls to [class-bound-components](https://github.com/janizde/class-bound-components)
 
