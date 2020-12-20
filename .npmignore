@@ -1,3 +1,9 @@
 node_modules
 *.log
 src
+package-lock.json
+.babelrc
+.prettierignore
+.prettier
+jest.config.js
+test
