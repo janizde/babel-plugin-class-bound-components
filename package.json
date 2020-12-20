@@ -16,6 +16,7 @@
     "@types/jest": "^26.0.4",
     "babel-jest": "^26.1.0",
     "babel-plugin-tester": "^9.2.0",
+    "coveralls": "^3.1.0",
     "jest": "^26.1.0",
     "prettier": "^2.0.5",
     "typescript": "^3.9.6"
@@ -24,7 +25,8 @@
     "clean": "rm -rf lib",
     "build": "babel --extensions \".ts\" src -d dist",
     "test": "jest",
-    "prepublish": "npm run clean && npm run build"
+    "prepublish": "npm run clean && npm run build",
+    "coverage": "jest --coverage && cat ./coverage/lcov.info | coveralls"
   },
   "keywords": [
     "babel",
