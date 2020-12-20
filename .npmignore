@@ -7,3 +7,5 @@ package-lock.json
 .prettier
 jest.config.js
 test
+coverage
+.vscode

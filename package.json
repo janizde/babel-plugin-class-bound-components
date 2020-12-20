@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.0.1",
   "name": "babel-plugin-class-bound-components",
   "description": "Babel plugin transforming calls to class-bound-components",
   "author": "Jannik Portz <hello@jannikportz.de>",
