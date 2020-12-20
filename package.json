@@ -1,9 +1,27 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "name": "babel-plugin-class-bound-components",
-  "description": "Plugin transforming calls to class-bound-components",
-  "repository": "janizde/babel-plugin-class-bound-components",
+  "description": "Babel plugin transforming calls to class-bound-components",
   "author": "Jannik Portz <hello@jannikportz.de>",
+  "license": "MIT",
+  "homepage": "https://jannikportz.de/#class-bound-components",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janizde/babel-plugin-class-bound-components.git"
+  },
+  "bugs": {
+    "url": "https://github.com/janizde/class-bound-components/issues"
+  },
+  "kewords": [
+    "class-bound-components",
+    "babel",
+    "babel-plugin",
+    "class-name",
+    "display-name",
+    "element-type",
+    "component",
+    "react"
+  ],
   "main": "dist/babel-plugin-class-bound-components.js",
   "devDependencies": {
     "@babel/cli": "^7.10.4",
@@ -27,11 +45,5 @@
     "test": "jest",
     "prepublish": "npm run clean && npm run build",
     "coverage": "jest --coverage && cat ./coverage/lcov.info | coveralls"
-  },
-  "keywords": [
-    "babel",
-    "plugin",
-    "class-bound-components",
-    "babel-plugin"
-  ]
+  }
 }
