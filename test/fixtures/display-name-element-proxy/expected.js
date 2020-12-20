@@ -26,3 +26,5 @@ const FooComponent4 = classBound.h1('fooClass', 'FooComponent4', {
 const FooComponent5 = classBound.h1('fooClass', 'BarComponent', {
   bar: 'barClass',
 });
+const FooComponent6 = classBound[`h${1}`]('fooClass');
+const FooComponent7 = classBound['h' + 1]('fooClass');

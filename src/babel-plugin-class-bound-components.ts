@@ -186,12 +186,6 @@ function makeRootVisitor(t: BabelTypes): Visitor {
       (call.arguments.length === 3 &&
         call.arguments[2].type === 'ObjectExpression')
     ) {
-      for (let i = 0; i < 2; ++i) {
-        if (call.arguments[i] === undefined) {
-          call.arguments[i] = t.nullLiteral();
-        }
-      }
-
       call.arguments.splice(2, 0, t.stringLiteral(displayName));
     }
   };
