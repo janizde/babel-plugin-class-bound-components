@@ -188,4 +188,4 @@ require('babel-core').transform('code', {
 });
 ```
 
-&copy; 2020 Jannik Portz – [License](./LICENSE)
+&copy; 2021 Jannik Portz – [License](./LICENSE)
